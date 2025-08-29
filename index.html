@@ -16,8 +16,8 @@
         .student-info h3 { color: #4a5568; margin-bottom: 20px; font-size: 1.3em; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #2d3748; }
-        .form-group input,.form-group select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all .3s ease; }
-        .form-group input:focus,.form-group select:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79,172,254,.1); }
+        .form-group input,..form-group select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all .3s ease; }
+        .form-group input:focus,..form-group select:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79,172,254,.1); }
         .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
         .test-section { background: #fff; border: 2px solid #e1e8ff; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
         .day-selector { margin-bottom: 30px; }
@@ -625,7 +625,7 @@ function nextQuestion(){
 
 async function submitTest() {
     // ❗️❗️ 중요: 아래 URL을 2단계에서 생성한 본인의 웹 앱 URL로 교체해야 합니다.
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiM1wR-NuRSwyTRPtiqJiM_xpIbzJ1TyRK27cdrJuZ8qUoIZ8YWhxLW8kAa5vzNgsl/exec';
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxr21g5WQGn4uH9xC1ognCeADgOqfrvcWYkTmiQNUNGaA5-f5Ev8sP6cgRO4X5HAlLi/exec';
 
     const correctCount = userAnswers.filter(a => a && a.isCorrect).length;
     const score = Math.round((correctCount / currentDayQuestions.length) * 100);
@@ -664,6 +664,7 @@ async function submitTest() {
         const response = await fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             body: formData,
+            mode: 'no-cors'
         });
         
         // no-cors 모드에서는 응답을 읽을 수 없으므로 성공으로 간주합니다.
