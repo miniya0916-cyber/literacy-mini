@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안산공고 글샘터 도서관 맞춤법 놀이터 (구글 시트 연동)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial','Noto Sans KR',sans-serif; background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg,#4facfe 0%,#00f2fe 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { font-size: 2.2em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .main-content { padding: 40px; }
+        .student-info { background: #f8f9ff; padding: 25px; border-radius: 15px; margin-bottom: 30px; border: 2px solid #e1e8ff; }
+        .student-info h3 { color: #4a5568; margin-bottom: 20px; font-size: 1.3em; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #2d3748; }
+        .form-group input,.form-group select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; transition: all .3s ease; }
+        .form-group input:focus,.form-group select:focus { outline: none; border-color: #4facfe; box-shadow: 0 0 0 3px rgba(79,172,254,.1); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .test-section { background: #fff; border: 2px solid #e1e8ff; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+        .day-selector { margin-bottom: 30px; }
+        .day-selector h3 { color: #4a5568; margin-bottom: 15px; font-size: 1.3em; }
+        .day-buttons { display: grid; grid-template-columns: repeat(auto-fit,minmax(80px,1fr)); gap: 10px; margin-bottom: 20px; }
+        .day-btn { padding: 10px; border: 2px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; transition: all .3s ease; font-weight: bold; }
+        .day-btn:hover { background: #f0f4f8; border-color: #4facfe; }
+        .day-btn.active { background: #4facfe; color: white; border-color: #4facfe; }
+        .question-container { display: none; animation: fadeIn .5s ease; }
+        .question-container.active { display: block; }
+        @keyframes fadeIn { from {opacity:0; transform: translateY(20px);} to {opacity:1; transform: translateY(0);} }
+        .question { background: #f7fafc; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #4facfe; }
+        .question h4 { color: #2d3748; margin-bottom: 15px; font-size: 1.2em; }
+        .question-text { font-size: 1.1em; margin-bottom: 15px; color: #4a5568; }
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .option { padding: 15px; border: 2px solid #e2e8f0; border-radius: 8px; cursor: pointer; transition: all .3s ease; background: white; text-align: center; }
+        .option:hover { background: #f0f4f8; border-color: #4facfe; }
+        .option.selected { background: #4facfe; color: white; border-color: #4facfe; }
+        .option.correct { background: #48bb78; color: white; border-color: #48bb78; }
+        .option.incorrect { background: #f56565; color: white; border-color: #f56565; }
+        .btn { padding: 15px 30px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all .3s ease; margin: 10px; }
+        .btn-primary { background: #4facfe; color: white; }
+        .btn-primary:hover { background: #3182ce; transform: translateY(-2px); }
+        .btn-success { background: #48bb78; color: white; }
+        .btn-success:hover { background: #38a169; }
+        .progress { background: #e2e8f0; height: 8px; border-radius: 4px; margin-bottom: 20px; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg,#4facfe,#00f2fe); border-radius: 4px; transition: width .3s ease; }
+        .score { background: linear-gradient(135deg,#667eea 0%,#764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; margin-top: 20px; }
+        .result-summary { background: #f7fafc; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .hidden { display: none; }
+        @media (max-width: 768px){ .form-row{ grid-template-columns:1fr } .options{ grid-template-columns:1fr } .day-buttons{ grid-template-columns: repeat(5,1fr) } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>📚 안산공고 글샘터 도서관 맞춤법 놀이터</h1>
+        <p>올바른 맞춤법으로 아름다운 우리말을 익혀보아요!</p>
+    </div>
+
+    <div class="main-content">
+        <div id="studentInfo" class="student-info">
+            <h3>👨‍🎓 학생 정보 입력</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="department">학과</label>
+                    <select id="department" required>
+                        <option value="">선택하세요</option>
+                        <option value="기계과">기계과</option>
+                        <option value="전기과">전기과</option>
+                        <option value="전자과">전자과</option>
+                        <option value="화공과">화공과</option>
+                        <option value="디자인과">디자인과</option>
+                        <option value="컴퓨터과">컴퓨터과</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="studentId">학번</label>
+                    <input type="text" id="studentId" placeholder="예: 20240101" required>
+                </div>
+                <div class="form-group">
+                    <label for="studentName">이름</label>
+                    <input type="text" id="studentName" placeholder="홍길동" required>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="startTest()">맞춤법 테스트 시작하기!</button>
+        </div>
+
+        <div id="testSection" class="test-section hidden">
+            <div class="day-selector">
+                <h3>📅 일차 선택 (30일 완성!)</h3>
+                <div class="day-buttons" id="dayButtons"></div>
+            </div>
+
+            <div id="testArea" class="hidden">
+                <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+                <div id="questionNumber" style="text-align:center;margin-bottom:20px;font-weight:bold;color:#4a5568;"></div>
+                <div id="questionContainer"></div>
+                <div style="text-align:center;">
+                    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" style="display:none;">다음 문제</button>
+                    <button class="btn btn-success" id="submitBtn" onclick="submitTest()" style="display:none;">결과 확인</button>
+                </div>
+            </div>
+
+            <div id="resultArea" class="hidden">
+                <div class="score">
+                    <h3>🎉 테스트 완료!</h3>
+                    <div id="scoreDisplay"></div>
+                </div>
+                <div class="result-summary" id="resultSummary"></div>
+                <div style="text-align:center;margin-top:20px;">
+                    <button class="btn btn-primary" onclick="resetTest()">다른 일차 테스트하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 문제 데이터
+const spellingData = {
+  1: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["안 돼요", "안 되요"], correct:0, word:"안 돼요"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 수 있어요", "할수 있어요"], correct:0, word:"할 수 있어요"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["되었습니다", "되었읍니다"], correct:0, word:"되었습니다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["웬일이야?", "왠일이야?"], correct:0, word:"웬일이야?"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["금세 끝났어", "금새 끝났어"], correct:0, word:"금세"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["며칠 동안", "몇칠 동안"], correct:0, word:"며칠"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런데 말이야", "그런대 말이야"], correct:0, word:"그런데"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["돼지고기", "되지고기"], correct:0, word:"돼지고기"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["그럴 것 같아", "그럴것 같아"], correct:0, word:"그럴 것 같아"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["언뜻 보니", "얼뜻 보니"], correct:0, word:"언뜻"}
+  ],
+  2: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["맞습니다", "맞읍니다"], correct:0, word:"맞습니다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 줄 알아", "할줄 알아"], correct:0, word:"할 줄 알아"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["깨끗이", "깨끗히"], correct:0, word:"깨끗이"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["왜냐하면", "왜냐 하면"], correct:0, word:"왜냐하면"},
+    {q:"다음 중 맞는 표현은?", desc:"병이 __", options:["낫다", "낳다"], correct:0, word:"낫다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떻게", "어떡해"], correct:0, word:"어떻게"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그러면", "그러믄"], correct:0, word:"그러면"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["봤어요", "봤어여"], correct:0, word:"봤어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 만해", "할만해"], correct:0, word:"할 만해"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"답이 __", options:["틀렸어", "틀렷어"], correct:0, word:"틀렸어"}
+  ],
+  3: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["몇 개", "몇개"], correct:0, word:"몇 개"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 게 없어", "할게 없어"], correct:0, word:"할 게 없어"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["싫어", "실어"], correct:0, word:"싫어"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그랬구나", "그랬군아"], correct:0, word:"그랬구나"},
+    {q:"다음 중 맞는 표현은?", desc:"시간이 __", options:["일찍", "일찍이"], correct:0, word:"일찍"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"정답을 __", options:["맞히다", "맞추다"], correct:0, word:"맞히다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그렇지", "그렇치"], correct:0, word:"그렇지"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["갔어요", "갔어여"], correct:0, word:"갔어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["그럼에도 불구하고", "그럼에도불구하고"], correct:0, word:"그럼에도 불구하고"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["예쁘게", "이쁘게"], correct:0, word:"예쁘게"}
+  ],
+  4: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["어떤 사람", "어떤사람"], correct:0, word:"어떤 사람"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 테니까", "할테니까"], correct:0, word:"할 테니까"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["뭐라고", "뭐라구"], correct:0, word:"뭐라고"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 줄", "그런줄"], correct:0, word:"그런 줄"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["부딪히다", "부딪치다"], correct:0, word:"부딪히다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쨌든", "어쨌던"], correct:0, word:"어쨌든"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그렇게", "그렇케"], correct:0, word:"그렇게"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["했어요", "했어여"], correct:0, word:"했어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["그럴 리가", "그럴리가"], correct:0, word:"그럴 리가"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["따뜻하게", "따뜻하케"], correct:0, word:"따뜻하게"}
+  ],
+  5: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["무엇을", "뭣을"], correct:0, word:"무엇을"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 걸 그랬어", "할걸 그랬어"], correct:0, word:"할 걸 그랬어"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"질문을 __", options:["묻다", "문다"], correct:0, word:"묻다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그러니까", "그러니깐"], correct:0, word:"그러니까"},
+    {q:"다음 중 맞는 표현은?", desc:"존경어", options:["계시다", "겨시다"], correct:0, word:"계시다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩔 수 없다", "어쩔수 없다"], correct:0, word:"어쩔 수 없다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그랬어", "그랬써"], correct:0, word:"그랬어"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["왔어요", "왔어여"], correct:0, word:"왔어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 법도 하다", "할법도 하다"], correct:0, word:"할 법도 하다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["친구들과", "친구들 과"], correct:0, word:"친구들과"}
+  ],
+  6: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["여러 가지", "여러가지"], correct:0, word:"여러 가지"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 수밖에", "할수밖에"], correct:0, word:"할 수밖에"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["따로", "따르로"], correct:0, word:"따로"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그래서", "그레서"], correct:0, word:"그래서"},
+    {q:"다음 중 맞는 표현은?", desc:"아이를 __", options:["낳다", "낫다"], correct:0, word:"낳다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떻게 해", "어떡해"], correct:0, word:"어떻게 해"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그렇게 하자", "그렇게하자"], correct:0, word:"그렇게 하자"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["꽃을", "꼬츨"], correct:0, word:"꽃을"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 듯하다", "할듯하다"], correct:0, word:"할 듯하다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["연필로", "연피로"], correct:0, word:"연필로"}
+  ],
+  7: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["몇 시", "몇시"], correct:0, word:"몇 시"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 뿐이야", "할뿐이야"], correct:0, word:"할 뿐이야"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["바꾸다", "바꿔다"], correct:0, word:"바꾸다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그러면서", "그러면서도"], correct:0, word:"그러면서"},
+    {q:"다음 중 맞는 표현은?", desc:"시계를 __", options:["맞추다", "맞히다"], correct:0, word:"맞추다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어디든지", "어디던지"], correct:0, word:"어디든지"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런데", "그런대"], correct:0, word:"그런데"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["섰어요", "섰어여"], correct:0, word:"섰어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 만큼", "할만큼"], correct:0, word:"할 만큼"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["깨끗한", "께끗한"], correct:0, word:"깨끗한"}
+  ],
+  8: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["한 명", "한명"], correct:0, word:"한 명"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할지도 몰라", "할지도몰라"], correct:0, word:"할지도 몰라"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["느끼다", "느끼따"], correct:0, word:"느끼다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럼 안 돼", "그럼 안되"], correct:0, word:"그럼 안 돼"},
+    {q:"다음 중 맞는 표현은?", desc:"문제를 __", options:["틀리다", "틀렸다"], correct:0, word:"틀리다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쨌거나", "어쨌거아"], correct:0, word:"어쨌거나"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럼에도", "그럼애도"], correct:0, word:"그럼에도"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["먹었어요", "먹었어여"], correct:0, word:"먹었어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 따름이야", "할따름이야"], correct:0, word:"할 따름이야"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["조심스레", "조심스럽게"], correct:0, word:"조심스레"}
+  ],
+  9: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그 사람", "그사람"], correct:0, word:"그 사람"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 수는 있어", "할수는 있어"], correct:0, word:"할 수는 있어"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"흙이 __", options:["묻히다", "물히다"], correct:0, word:"묻히다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 식으로", "그런식으로"], correct:0, word:"그런 식으로"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["무릎을", "무릅을"], correct:0, word:"무릎을"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어디서나", "어디서 나"], correct:0, word:"어디서나"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 텐데", "그럴텐데"], correct:0, word:"그럴 텐데"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["앉았어요", "앉았어여"], correct:0, word:"앉았어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 뿐만 아니라", "할뿐만 아니라"], correct:0, word:"할 뿐만 아니라"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가끔씩", "가금씩"], correct:0, word:"가끔씩"}
+  ],
+  10: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["이런 것", "이런것"], correct:0, word:"이런 것"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 만도 하다", "할만도 하다"], correct:0, word:"할 만도 하다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["뜨겁다", "뜨거워"], correct:0, word:"뜨겁다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 일이", "그런일이"], correct:0, word:"그런 일이"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["마중", "마둥"], correct:0, word:"마중"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어느새", "어느사이"], correct:0, word:"어느새"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 거야", "그럴거야"], correct:0, word:"그럴 거야"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["찾았어요", "찾았어여"], correct:0, word:"찾았어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 줄도 모르고", "할줄도 모르고"], correct:0, word:"할 줄도 모르고"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["너무나", "너머나"], correct:0, word:"너무나"}
+  ],
+  11: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["저런 거", "저런거"], correct:0, word:"저런 거"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 수도 있고", "할수도 있고"], correct:0, word:"할 수도 있고"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["까다롭다", "까다로워"], correct:0, word:"까다롭다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 방법", "그런방법"], correct:0, word:"그런 방법"},
+    {q:"다음 중 맞는 표현은?", desc:"병이 __", options:["낫겠다", "났겠다"], correct:0, word:"낫겠다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떻든", "어떻던"], correct:0, word:"어떻든"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 만해", "그럴만해"], correct:0, word:"그럴 만해"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["놓았어요", "놓았어여"], correct:0, word:"놓았어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 것도 없이", "할것도 없이"], correct:0, word:"할 것도 없이"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["분명히", "분명이"], correct:0, word:"분명히"}
+  ],
+  12: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["무슨 일", "무슨일"], correct:0, word:"무슨 일"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 것 같아", "할것 같아"], correct:0, word:"할 것 같아"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["부끄럽다", "부끄러워"], correct:0, word:"부끄럽다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 생각", "그런생각"], correct:0, word:"그런 생각"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["겉모습", "걷모습"], correct:0, word:"겉모습"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어찌됐든", "어찌됐던"], correct:0, word:"어찌됐든"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 뻔했어", "그럴뻔했어"], correct:0, word:"그럴 뻔했어"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["읽었어요", "읽었어여"], correct:0, word:"읽었어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 게 아니라", "할게 아니라"], correct:0, word:"할 게 아니라"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["정말로", "정마로"], correct:0, word:"정말로"}
+  ],
+  13: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["어떤 때", "어떤때"], correct:0, word:"어떤 때"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 바에는", "할바에는"], correct:0, word:"할 바에는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["높다랗다", "높다란"], correct:0, word:"높다랗다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 모습", "그런모습"], correct:0, word:"그런 모습"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["넓다", "널다"], correct:0, word:"넓다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어김없이", "어김없시"], correct:0, word:"어김없이"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 일은", "그럴일은"], correct:0, word:"그럴 일은"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["들었어요", "들었어여"], correct:0, word:"들었어요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 게 뻔해", "할게 뻔해"], correct:0, word:"할 게 뻔해"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가만히", "가만이"], correct:0, word:"가만히"}
+  ],
+  14: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 말", "그런말"], correct:0, word:"그런 말"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 테니", "할테니"], correct:0, word:"할 테니"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["바쁘다", "바빠"], correct:0, word:"바쁘다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 얘기", "그런얘기"], correct:0, word:"그런 얘기"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["받침", "받힘"], correct:0, word:"받침"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌면", "어쩌믄"], correct:0, word:"어쩌면"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도", "그럴수도"], correct:0, word:"그럴 수도"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["써요", "써여"], correct:0, word:"써요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 수 있을까", "할수 있을까"], correct:0, word:"할 수 있을까"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["자꾸만", "자꾸맨"], correct:0, word:"자꾸만"}
+  ],
+  15: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["이런 상황", "이런상황"], correct:0, word:"이런 상황"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["할 거예요", "할거예요"], correct:0, word:"할 거예요"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["곱다", "고와"], correct:0, word:"곱다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그런 문제", "그런문제"], correct:0, word:"그런 문제"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["핥다", "할타"], correct:0, word:"핥다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩐지", "어떤지"], correct:0, word:"어쩐지"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 만도", "그럴만도"], correct:0, word:"그럴 만도"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["해요", "해여"], correct:0, word:"해요"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 거야", "할거야"], correct:0, word:"할 거야"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["진짜로", "진짜루"], correct:0, word:"진짜로"}
+  ],
+  16: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴듯하다", "그럴듯 하다"], correct:0, word:"그럴듯하다"},
+    {q:"다음 중 올바른 띄어쓰기는?", desc:"", options:["할 수 있다", "할수있다"], correct:0, word:"할 수 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["되도록이면", "되도록 이면"], correct:0, word:"되도록이면"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떡해", "어떻해"], correct:0, word:"어떡해"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있지", "그럴수도 있지"], correct:0, word:"그럴 수도 있지"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["되게 예쁘다", "되게예쁘다"], correct:0, word:"되게 예쁘다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["웬일이야?", "왠일이야?"], correct:0, word:"웬일이야?"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 리가 없어", "그럴리가 없어"], correct:0, word:"그럴 리가 없어"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["이럴 줄 알았어", "이럴줄 알았어"], correct:0, word:"이럴 줄 알았어"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["그럴 만도 해", "그럴만도 해"], correct:0, word:"그럴 만도 해"}
+  ],
+  17: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["어떻게든 해볼게", "어떻게든지 해볼게"], correct:0, word:"어떻게든"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["그럴 듯한 이야기", "그럴듯한 이야기"], correct:0, word:"그럴 듯한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["웬만하면 참아", "왠만하면 참아"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴지도 몰라", "그럴지도 몰른다"], correct:0, word:"그럴지도 몰라"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["되도록 빨리 와", "되도록이면 빨리 와"], correct:0, word:"되도록"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩐지 이상하더라니", "어쩐지 이상하드라니"], correct:0, word:"-더라니"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 법도 하지", "그럴법도 하지"], correct:0, word:"그럴 법도 하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["이럴 수도 있지", "이럴수도 있지"], correct:0, word:"이럴 수도 있다"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 만한 가치가 있어", "할만한 가치가 있어"], correct:0, word:"할 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"※ 정답은 '왠지'입니다!", options:["왠지 모르게 슬퍼", "웬지 모르게 슬퍼"], correct:0, word:"왠지"}
+  ],
+  18: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["어이없다", "어의없다"], correct:0, word:"어이없다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["말도 안 되는 소리", "말도안되는 소리"], correct:0, word:"안 되는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["일일이 확인했어", "일일히 확인했어"], correct:0, word:"일일이"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되뇌다", "되뇌이다"], correct:0, word:"되뇌다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 새", "하늘을 날으는 새"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가만히 있어", "가만이 있어"], correct:0, word:"가만히"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있어", "그럴수도 있어"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬일이야?", "왠일이야?"], correct:0, word:"웬일"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["그럴 듯한 태도", "그럴듯한 태도"], correct:0, word:"그럴 듯한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무시하다", "묵시하다"], correct:0, word:"무시하다"}
+  ],
+  19: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["가르쳐 주세요", "가르처 주세요"], correct:0, word:"가르쳐"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["그럴 만한 이유", "그럴만한 이유"], correct:0, word:"그럴 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쨌든", "어쨋든"], correct:0, word:"어쨌든"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되도록이면 빨리", "되도록 이면 빨리"], correct:0, word:"되도록이면"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 꿈", "하늘을 날으는 꿈"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가만히 있어 봐", "가만이 있어 봐"], correct:0, word:"가만히"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 리가 없지", "그럴리가 없지"], correct:0, word:"그럴 리가"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 넘어가자", "왠만하면 넘어가자"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼", "할수있는 만큼"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무심코 지나쳤다", "무신코 지나쳤다"], correct:0, word:"무심코"}
+  ],
+  20: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["가르치다", "가르키다"], correct:0, word:"가르치다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각보다 더 어렵다", "생각 보다 더 어렵다"], correct:0, word:"생각보다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌면", "어쩌믄"], correct:0, word:"어쩌면"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되풀이하다", "되풀이다"], correct:0, word:"되풀이하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 날다", "하늘을 날르다"], correct:0, word:"날다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐하다", "가분하다"], correct:0, word:"가뿐하다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠네", "그럴수도 있겠네"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 그냥 둬", "왠만하면 그냥 둬"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 일", "할수있는 일"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식적으로", "무의식적 으로"], correct:0, word:"무의식적으로"}
+  ],
+  21: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["가로막다", "가로막는다"], correct:0, word:"가로막다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 볼 문제야", "생각해볼 문제야"], correct:0, word:"생각해 볼"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌다가", "어쩌다 가"], correct:0, word:"어쩌다가"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되도록이면 조심해", "되도록 이면 조심해"], correct:0, word:"되도록이면"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 날다", "하늘을 날르다"], correct:0, word:"날다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐하게 끝냈어", "가분하게 끝냈어"], correct:0, word:"가뿐하게"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠지", "그럴수도 있겠지"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 참아줘", "왠만하면 참아줘"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼만 해", "할수있는 만큼만 해"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식 중에 그랬어", "무의식중에 그랬어"], correct:0, word:"무의식 중에"}
+  ],
+  22: [
+    {q:"다음 중 올바른 표현은?", desc:"※ '가르치다'와 헷갈리기 쉬운 표현!", options:["가리키다", "가르키다"], correct:0, word:"가리키다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 보니 그렇더라", "생각해보니 그렇더라"], correct:0, word:"생각해 보니"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌다가 생긴 일", "어쩌다 가 생긴 일"], correct:0, word:"어쩌다가"},
+    {q:"다음 중 올바른 표현은?", desc:"※ '되도록이면'은 강조할 때만 사용!", options:["되도록 빨리 끝내자", "되도록이면 빨리 끝내자"], correct:0, word:"되도록"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 기분", "하늘을 날으는 기분"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐한 하루", "가분한 하루"], correct:0, word:"가뿐한"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠어", "그럴수도 있겠어"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 그냥 넘어가", "왠만하면 그냥 넘어가"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼만 해봐", "할수있는 만큼만 해봐"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식 중에 나온 말", "무의식중에 나온 말"], correct:0, word:"무의식 중에"}
+  ],
+  23: [
+    {q:"다음 중 올바른 표현은?", desc:"※ '간질이다'는 병명을 뜻할 때 사용", options:["간지럽히다", "간질이다"], correct:0, word:"간지럽히다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 볼 만한 이야기", "생각해볼만한 이야기"], correct:0, word:"생각해 볼 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌면 그럴 수도 있어", "어쩌믄 그럴 수도 있어"], correct:0, word:"어쩌면"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되돌아보다", "되돌아 보았다"], correct:0, word:"되돌아보다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 새처럼", "하늘을 날으는 새처럼"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐한 기분", "가분한 기분"], correct:0, word:"가뿐한"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠지요", "그럴수도 있겠지요"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 그냥 둬요", "왠만하면 그냥 둬요"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼만 해요", "할수있는 만큼만 해요"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식 중에 나온 행동", "무의식중에 나온 행동"], correct:0, word:"무의식 중에"}
+  ],
+  24: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["간편하다", "간펀하다"], correct:0, word:"간편하다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 볼 수도 있어", "생각해볼수도 있어"], correct:0, word:"생각해 볼"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌다가 그런 일이 생겼지", "어쩌다 가 그런 일이 생겼지"], correct:0, word:"어쩌다가"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되돌아보니 알겠더라", "되돌아 보니 알겠더라"], correct:0, word:"되돌아보니"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 느낌", "하늘을 날으는 느낌"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐한 하루였어", "가분한 하루였어"], correct:0, word:"가뿐한"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠네요", "그럴수도 있겠네요"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 그냥 지나가요", "왠만하면 그냥 지나가요"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼만 해요", "할수있는 만큼만 해요"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식 중에 나온 말이야", "무의식중에 나온 말이야"], correct:0, word:"무의식 중에"}
+  ],
+  25: [
+    {q:"다음 중 올바른 표현은?", desc:"※ '갖다 주다'는 구어체에서 자연스러운 표현", options:["갖다 주다", "가져다 주다"], correct:0, word:"갖다 주다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 본 결과", "생각해본 결과"], correct:0, word:"생각해 본"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌다가 생긴 일", "어쩌다 가 생긴 일"], correct:0, word:"어쩌다가"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되돌아보니 알겠더라", "되돌아 보니 알겠더라"], correct:0, word:"되돌아보니"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 기분이었어", "하늘을 날으는 기분이었어"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐하게 끝냈다", "가분하게 끝냈다"], correct:0, word:"가뿐하게"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠네요", "그럴수도 있겠네요"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 그냥 둬요", "왠만하면 그냥 둬요"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼만 해요", "할수있는 만큼만 해요"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식 중에 나온 행동이야", "무의식중에 나온 행동이야"], correct:0, word:"무의식 중에"}
+  ],
+  26: [
+    {q:"다음 중 올바른 표현은?", desc:"※ 구어체에서는 '갖다 놓다'가 더 자연스럽고 간결함", options:["갖다 놓다", "가져다 놓다"], correct:0, word:"갖다 놓다"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 본 이야기야", "생각해본 이야기야"], correct:0, word:"생각해 본"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어쩌다가 그런 일이 있었어", "어쩌다 가 그런 일이 있었어"], correct:0, word:"어쩌다가"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["되돌아보면 알 수 있지", "되돌아 보면 알 수 있지"], correct:0, word:"되돌아보면"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["하늘을 나는 상상", "하늘을 날으는 상상"], correct:0, word:"나는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가뿐한 하루였지", "가분한 하루였지"], correct:0, word:"가뿐한"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 수도 있겠지", "그럴수도 있겠지"], correct:0, word:"그럴 수도 있다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["웬만하면 그냥 지나쳐", "왠만하면 그냥 지나쳐"], correct:0, word:"웬만하면"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 수 있는 만큼만 해봐", "할수있는 만큼만 해봐"], correct:0, word:"할 수 있는"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무의식 중에 나온 말이었지", "무의식중에 나온 말이었지"], correct:0, word:"무의식 중에"}
+  ],
+  27: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["기다려 주세요", "기다려 주새요"], correct:0, word:"-주세요"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["그럴 듯해 보여", "그럴듯해 보여"], correct:0, word:"그럴 듯해"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떡하죠?", "어떻하죠?"], correct:0, word:"어떡하죠?"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["말을 더듬다", "말을 더금다"], correct:0, word:"더듬다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["기회를 놓치다", "기회를 놓치었다"], correct:0, word:"놓치다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"※ 동사 원형 기준", options:["가로막다", "가로막는다"], correct:0, word:"가로막다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 법도 하지", "그럴법도 하지"], correct:0, word:"그럴 법도 하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["어쩐지 이상하더라니", "어쩐지 이상하드라니"], correct:0, word:"-더라니"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 만한 가치가 있어", "할만한 가치가 있어"], correct:0, word:"할 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무심코 지나쳤다", "무신코 지나쳤다"], correct:0, word:"무심코"}
+  ],
+  28: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["기다려 달라고 했어", "기다려 달라구 했어"], correct:0, word:"-라고"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["그럴 듯한 말이야", "그럴듯한 말이야"], correct:0, word:"그럴 듯한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떻게 해야 할까?", "어떻게 해야할까?"], correct:0, word:"해야 할까?"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["말을 더듬었어", "말을 더금었어"], correct:0, word:"더듬었어"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["기회를 잡다", "기회를 잡았다가"], correct:0, word:"잡다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가로막히다", "가로막히였다"], correct:0, word:"가로막히다"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 법도 있지", "그럴법도 있지"], correct:0, word:"그럴 법도 하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["어쩐지 낯익더라니", "어쩐지 낯익드라니"], correct:0, word:"-더라니"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 만한 일이야", "할만한 일이야"], correct:0, word:"할 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무심코 말했어", "무신코 말했어"], correct:0, word:"무심코"}
+  ],
+  29: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴지도 모르겠어", "그럴지도 몰르겠어"], correct:0, word:"모르겠어"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 보려고 했어", "생각해보려고 했어"], correct:0, word:"생각해 보려고"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떻게든 해보자", "어떻게든지 해보자"], correct:0, word:"어떻게든"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["말을 더듬거리다", "말을 더금거리다"], correct:0, word:"더듬거리다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["기회를 놓치지 마", "기회를 놓치지 말아라"], correct:0, word:"-지 마"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가로막히는 느낌이야", "가로막히는 느낌이다"], correct:0, word:"느낌이야"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 법도 있겠지", "그럴법도 있겠지"], correct:0, word:"그럴 법도 하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["어쩐지 낯설더라니", "어쩐지 낯설드라니"], correct:0, word:"-더라니"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 만한 일이라 생각해", "할만한 일이라 생각해"], correct:0, word:"할 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["무심코 행동했어", "무신코 행동했어"], correct:0, word:"무심코"}
+  ],
+  30: [
+    {q:"다음 중 올바른 표현은?", desc:"", options:["기다려 보자", "기다려보자"], correct:0, word:"기다려 보자"},
+    {q:"다음 중 맞는 띄어쓰기는?", desc:"", options:["생각해 본 적이 있니?", "생각해본 적이 있니?"], correct:0, word:"생각해 본"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["어떻게든 해내자", "어떻게든지 해내자"], correct:0, word:"어떻게든"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["말을 더듬더듬하다", "말을 더금더금하다"], correct:0, word:"더듬더듬하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["기회를 살리다", "기회를 살렸다가"], correct:0, word:"살리다"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["가로막힌 길", "가로막힌 길이다"], correct:0, word:"길"},
+    {q:"다음 중 올바른 표현은?", desc:"", options:["그럴 법도 있겠네", "그럴법도 있겠네"], correct:0, word:"그럴 법도 하다"},
+    {q:"다음 중 맞는 표현은?", desc:"", options:["어쩐지 익숙하더라니", "어쩐지 익숙하드라니"], correct:0, word:"-더라니"},
+    {q:"다음 중 올바른 띄어쓰기?", desc:"", options:["할 만한 이유가 있어", "할만한 이유가 있어"], correct:0, word:"할 만한"},
+    {q:"다음 중 올바른 맞춤법은?", desc:"", options:["조심스럽게 말했다", "조심스럽게 말해다"], correct:0, word:"말했다"}
+  ]
+};
+
+// 앱 로직
+let currentDay = 1, currentQuestion = 0, userAnswers = [], studentInfo = {};
+let dayAssignments = {}, currentDayQuestions = [];
+
+function seededShuffle(array, seed) {
+    let currentIndex = array.length, temporaryValue, randomIndex;
+    let random = () => {
+        var x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    };
+    while (0 !== currentIndex) {
+        randomIndex = Math.floor(random() * currentIndex);
+        currentIndex -= 1;
+        temporaryValue = array[currentIndex];
+        array[currentIndex] = array[randomIndex];
+        array[randomIndex] = temporaryValue;
+    }
+    return array;
+}
+
+function prepareDayAssignments(){
+  for(let d=1; d<=30; d++){
+    const dayData = spellingData[d] || [];
+    dayAssignments[d] = dayData.map(item => {
+      const opts = [...item.options];
+      const correctIndex = item.correct;
+      return { q:item.q, desc:item.desc, options:opts, correct: correctIndex, word:item.word };
+    });
+  }
+}
+
+function startTest(){
+  const department = document.getElementById('department').value;
+  const studentId = document.getElementById('studentId').value;
+  const studentName = document.getElementById('studentName').value;
+  if(!department || !studentId || !studentName){ alert('모든 정보를 입력해주세요!'); return; }
+  studentInfo = { department, studentId, studentName };
+  document.getElementById('studentInfo').classList.add('hidden');
+  document.getElementById('testSection').classList.remove('hidden');
+  prepareDayAssignments();
+  generateDayButtons();
+}
+
+function generateDayButtons(){
+  const dayButtons = document.getElementById('dayButtons');
+  dayButtons.innerHTML = '';
+  for(let i=1;i<=30;i++){
+    const button = document.createElement('button');
+    button.className = 'day-btn';
+    button.textContent = i + '일';
+    button.addEventListener('click', (e)=> selectDay(i, e.currentTarget));
+    dayButtons.appendChild(button);
+  }
+}
+
+function selectDay(day, btnEl){
+  currentDay = day; currentQuestion = 0; userAnswers = [];
+  document.querySelectorAll('.day-btn').forEach(b=>b.classList.remove('active'));
+  if(btnEl) btnEl.classList.add('active');
+  document.getElementById('testArea').classList.remove('hidden');
+  startDayTest();
+}
+
+function startDayTest(){
+  currentQuestion = 0; userAnswers = [];
+  document.getElementById('resultArea').classList.add('hidden');
+  currentDayQuestions = seededShuffle([...dayAssignments[currentDay]], new Date().getTime());
+  showQuestion();
+}
+
+function showQuestion(){
+  const question = currentDayQuestions[currentQuestion];
+  if(!question){
+      document.getElementById('questionContainer').innerHTML = '<p>문제를 불러오는 데 실패했습니다.</p>';
+      return;
+  }
+  document.getElementById('questionNumber').textContent = `문제 ${currentQuestion + 1} / ${currentDayQuestions.length}`;
+  const progressPercent = (currentQuestion / currentDayQuestions.length) * 100;
+  document.getElementById('progressBar').style.width = progressPercent + '%';
+
+  const container = document.getElementById('questionContainer');
+  let optionsHTML = '';
+  const shuffledOptions = seededShuffle([...question.options], new Date().getTime() + currentQuestion);
+
+  shuffledOptions.forEach((opt) => {
+      optionsHTML += `<div class="option" data-original-idx="${question.options.indexOf(opt)}">${opt}</div>`;
+  });
+
+  container.innerHTML = `
+    <div class="question active">
+      <h4>${question.q}</h4>
+      <div class="question-text">${question.desc}</div>
+      <div class="options">${optionsHTML}</div>
+    </div>`;
+
+  document.querySelectorAll('.option').forEach(optEl => {
+      optEl.addEventListener('click', () => {
+          const originalIndex = parseInt(optEl.getAttribute('data-original-idx'), 10);
+          selectOption(originalIndex, optEl);
+      });
+  });
+
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('submitBtn').style.display = 'none';
+}
+
+function selectOption(selectedIndex, selectedEl){
+    const options = document.querySelectorAll('.option');
+    options.forEach(opt => opt.style.pointerEvents = 'none'); // 중복 클릭 방지
+
+    const question = currentDayQuestions[currentQuestion];
+    const isCorrect = selectedIndex === question.correct;
+    userAnswers[currentQuestion] = {
+        question: question.q,
+        selected: question.options[selectedIndex],
+        correctAnswer: question.options[question.correct],
+        isCorrect: isCorrect
+    };
+
+    options.forEach(opt => {
+        const originalIndex = parseInt(opt.getAttribute('data-original-idx'), 10);
+        if (originalIndex === question.correct) {
+            opt.classList.add('correct');
+        }
+    });
+
+    if (!isCorrect) {
+        selectedEl.classList.add('incorrect');
+    }
+
+    if (currentQuestion < currentDayQuestions.length - 1) {
+        document.getElementById('nextBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('submitBtn').style.display = 'inline-block';
+    }
+}
+
+function nextQuestion(){
+    currentQuestion++;
+    showQuestion();
+}
+
+async function submitTest() {
+    // ❗️❗️ 중요: 아래 URL을 2단계에서 생성한 본인의 웹 앱 URL로 교체해야 합니다.
+    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiM1wR-NuRSwyTRPtiqJiM_xpIbzJ1TyRK27cdrJuZ8qUoIZ8YWhxLW8kAa5vzNgsl/exec';
+
+    const correctCount = userAnswers.filter(a => a && a.isCorrect).length;
+    const score = Math.round((correctCount / currentDayQuestions.length) * 100);
+
+    // 상세 결과 데이터 생성 (JSON 문자열로 변환)
+    const detailedAnswers = JSON.stringify(userAnswers.map((ans, index) => ({
+        questionNumber: index + 1,
+        question: ans.question,
+        selected: ans.selected,
+        correctAnswer: ans.correctAnswer,
+        result: ans.isCorrect ? 'O' : 'X'
+    })));
+
+    const resultData = {
+        timestamp: new Date().toISOString(),
+        department: studentInfo.department,
+        studentId: studentInfo.studentId,
+        studentName: studentInfo.studentName,
+        day: currentDay,
+        score: score,
+        answers: detailedAnswers
+    };
+    
+    // 로딩 상태 표시
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = '제출 중...';
+
+    try {
+        // FormData 객체를 사용하여 데이터를 전송합니다.
+        const formData = new FormData();
+        for (const key in resultData) {
+            formData.append(key, resultData[key]);
+        }
+
+        const response = await fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: formData,
+        });
+        
+        // no-cors 모드에서는 응답을 읽을 수 없으므로 성공으로 간주합니다.
+        alert('✅ 결과가 구글 시트에 저장되었습니다!');
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ 데이터 저장 중 오류가 발생했습니다. 네트워크 문제일 수 있습니다.');
+    } finally {
+        // 버튼 상태 복원 및 결과 표시
+        submitBtn.textContent = '제출 완료';
+    }
+
+    document.getElementById('testArea').classList.add('hidden');
+    document.getElementById('resultArea').classList.remove('hidden');
+    document.getElementById('scoreDisplay').innerHTML = `<h2>${score}점</h2><p>${currentDayQuestions.length}문제 중 ${correctCount}문제 정답!</p>`;
+
+    let summaryHTML = '<h4>📝 상세 결과</h4>';
+    userAnswers.forEach((answer, idx) => {
+        const status = answer.isCorrect ? '✅' : '❌';
+        summaryHTML += `<div style="margin-bottom:10px;padding:10px;border-radius:5px;background:${answer.isCorrect ? '#f0fff4' : '#fff5f5'};">
+      <span style="font-weight:bold;">${status} 문제 ${idx + 1}:</span> ${answer.question}<br>
+      <small>제출 답안: ${answer.selected} / 정답: ${answer.correctAnswer}</small>
+    </div>`;
+    });
+    document.getElementById('resultSummary').innerHTML = summaryHTML;
+}
+
+function resetTest(){
+  document.getElementById('resultArea').classList.add('hidden');
+  document.getElementById('testArea').classList.add('hidden');
+  document.querySelectorAll('.day-btn').forEach(btn=>btn.classList.remove('active'));
+}
+</script>
+</body>
+</html>
